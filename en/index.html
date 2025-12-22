@@ -5,6 +5,18 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Trade Commissioner Service – Chat Prototype (EN)</title>
 
+  <!-- ============================================================
+       CONFIG: TOKEN ENDPOINT (easy to find)
+       Option A (recommended for testing):
+         Pass it as a query string:
+           ?tokenEndpoint=https%3A%2F%2F...%2Fdirectline%2Ftoken%3Fapi-version%3D...
+       Option B:
+         Replace the placeholder below.
+       ============================================================ -->
+  <script>
+    const TOKEN_ENDPOINT_PLACEHOLDER = "https://bd8b80b56a19e41ba78d4fa1f1c4cd.f3.environment.api.powerplatform.com/powervirtualagents/botsbyschema/crd8f_gacAgentUc02/directline/token?api-version=2022-03-01-preview";
+  </script>
+
   <!-- Gov of Canada-ish typography: headings in Lato, body in Noto Sans -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -15,10 +27,16 @@
 
   <style>
     :root{
-      /* GC/TCS-inspired palette */
-      --goc-navy: #26374a;
-      --goc-red:  #c00;
-      --eva-gold: #d19900;
+      /* TCS/GCWeb-style navy (avoid gold accents) */
+      --tcs-navy: #26374a;
+      --tcs-navy-2: #1f2f3d; /* hover/darker */
+      --text-on-navy: #ffffff;
+
+      /* Neutrals */
+      --text: #111;
+      --muted: #4b5563;
+      --border: #e5e7eb;
+      --bg: #ffffff;
 
       /* Layout */
       --page-max: 1140px;
@@ -30,11 +48,6 @@
       --header-height: 54px;
       --radius: 14px;
       --shadow: 0 18px 40px rgba(0,0,0,.18);
-
-      --text: #111;
-      --muted: #4b5563;
-      --border: #e5e7eb;
-      --bg: #ffffff;
     }
 
     html, body { height: 100%; }
@@ -69,7 +82,7 @@
       width: 42px;
       height: 22px;
       background:
-        linear-gradient(90deg, var(--goc-red) 0 22%, #fff 22% 78%, var(--goc-red) 78% 100%);
+        linear-gradient(90deg, #c00 0 22%, #fff 22% 78%, #c00 78% 100%);
       border: 1px solid rgba(0,0,0,.08);
       border-radius: 2px;
       flex: 0 0 auto;
@@ -95,7 +108,7 @@
     }
     .lang{
       font-size: 13px;
-      color: var(--goc-navy);
+      color: var(--tcs-navy);
       text-decoration: underline;
       cursor: pointer;
       user-select: none;
@@ -113,7 +126,7 @@
       font-weight: 700;
       font-size: 28px;
       margin: 0 0 8px 0;
-      color: var(--goc-navy);
+      color: var(--tcs-navy);
     }
     .lede{
       margin: 0;
@@ -121,26 +134,6 @@
       max-width: 72ch;
       line-height: 1.6;
       font-size: 15px;
-    }
-    .note{
-      margin-top: 14px;
-      padding: 12px 14px;
-      border: 1px solid var(--border);
-      border-left: 4px solid var(--goc-navy);
-      background: #f9fafb;
-      border-radius: 10px;
-      max-width: 84ch;
-      color: #1f2937;
-      font-size: 14px;
-      line-height: 1.5;
-    }
-    .note code{
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
-      font-size: 12px;
-      background: #fff;
-      padding: 1px 6px;
-      border-radius: 6px;
-      border: 1px solid var(--border);
     }
 
     /* Floating widget */
@@ -166,8 +159,8 @@
 
     #chatbot-header{
       height: var(--header-height);
-      background: var(--goc-navy);
-      color: #fff;
+      background: var(--tcs-navy);
+      color: var(--text-on-navy);
       display:flex;
       align-items:center;
       justify-content:space-between;
@@ -183,12 +176,14 @@
       letter-spacing: .1px;
       font-family: "Noto Sans", system-ui, sans-serif;
     }
+
+    /* IMPORTANT: no "image in image" effect */
     .header-title img{
       width: 22px;
       height: 22px;
       border-radius: 6px;
       display:block;
-      background: transparent;
+      background: transparent; /* do not add a filled circle */
     }
 
     .header-buttons{
@@ -241,35 +236,26 @@
       background: #fff;
     }
 
-    /* Launcher: round, navy + gold ring */
+    /* Launcher: single circle, navy, no gold ring */
     #open-chat{
       width: 64px;
       height: 64px;
       border-radius: 999px;
       border: none;
       cursor: pointer;
-      background: var(--goc-navy);
+      background: var(--tcs-navy);
       box-shadow: var(--shadow);
       display:flex;
       align-items:center;
       justify-content:center;
       padding: 0;
-      position: relative;
     }
-    #open-chat::before{
-      content: "";
-      position: absolute;
-      inset: 0;
-      border-radius: 999px;
-      border: 2px solid rgba(209,153,0,.9); /* gold ring */
-      pointer-events: none;
-    }
+    #open-chat:hover{ background: var(--tcs-navy-2); }
     #open-chat.hidden{ display:none; }
     #open-chat img{
       width: 30px;
       height: 30px;
       display:block;
-      filter: drop-shadow(0 1px 0 rgba(0,0,0,.25));
     }
 
     @media (max-width: 768px){
@@ -292,50 +278,78 @@
 
   <script>
     // ------------------------------------------------------------
-    // REQUIRED: token endpoint (placeholder + optional query override)
+    // Assets
     // ------------------------------------------------------------
-    const TOKEN_ENDPOINT_PLACEHOLDER = "https://bd8b80b56a19e41ba78d4fa1f1c4cd.f3.environment.api.powerplatform.com/powervirtualagents/botsbyschema/crd8f_gacAgentUc02/directline/token?api-version=2022-03-01-preview";
+    const evaIconUrl =
+      "https://tcs-akamai-stage.tradecommissioner.gc.ca/etc.clientlibs/tcs/clientlibs/clientlib-site/resources/assets/chatbot/chatbot.png";
 
+    // Keep the user avatar you liked (gold sample)
+    const userAvatarUrl =
+      "https://powercatexternal.blob.core.windows.net/creatorkit/defaultuser.png";
+
+    // ------------------------------------------------------------
+    // Token endpoint resolver (querystring override)
+    // ------------------------------------------------------------
     function resolveTokenEndpoint() {
       const params = new URLSearchParams(window.location.search);
       const te = params.get("tokenEndpoint");
       return (te && te.trim()) ? te.trim() : TOKEN_ENDPOINT_PLACEHOLDER;
     }
 
-    // Assets
-    const evaIconUrl =
-      "https://tcs-akamai-stage.tradecommissioner.gc.ca/etc.clientlibs/tcs/clientlibs/clientlib-site/resources/assets/chatbot/chatbot.png";
+    // ------------------------------------------------------------
+    // Language passing strategy
+    // Your site uses:
+    //   Language=English
+    //   Language=French_Canada
+    //
+    // We will:
+    // 1) Read that from querystring (case-sensitive key: Language)
+    // 2) Map it to a WebChat-friendly locale
+    // 3) Send it via startConversation event channelData
+    // ------------------------------------------------------------
+    function getLanguageRaw() {
+      const params = new URLSearchParams(window.location.search);
+      return params.get("Language") || ""; // "English" or "French_Canada"
+    }
 
-    const userAvatarGoldUrl =
-      "https://powercatexternal.blob.core.windows.net/creatorkit/defaultuser.png";
+    function mapLanguageToLocale(raw) {
+      if (raw === "French_Canada") return "fr-CA";
+      if (raw === "English") return "en";
+      return "en"; // default
+    }
+
+    const languageRaw = getLanguageRaw();
+    const languageLocale = mapLanguageToLocale(languageRaw);
 
     // ------------------------------------------------------------
-    // Web Chat style options (navy + gold accents, GoC-ish typography)
+    // Web Chat style options (no gold theme)
     // ------------------------------------------------------------
     const styleOptions = {
       primaryFont: '"Noto Sans", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif',
       monospaceFont: 'Consolas, ui-monospace, SFMono-Regular, Menlo, Monaco, "Liberation Mono", monospace',
 
-      accent: "#d19900",
+      // Keep accents aligned to TCS navy
+      accent: "#26374a",
 
       backgroundColor: "#ffffff",
       sendBoxBackground: "#ffffff",
       sendBoxTextColor: "#111111",
       sendBoxBorderTop: "solid 1px #e5e7eb",
       sendBoxPlaceholderColor: "#6b7280",
-      sendBoxButtonColor: "#d19900",
-      sendBoxButtonColorOnHover: "#bc8900",
+      sendBoxButtonColor: "#26374a",
+      sendBoxButtonColorOnHover: "#1f2f3d",
       sendBoxHeight: 60,
 
       avatarBorderRadius: "50%",
       avatarSize: 39,
 
-      botAvatarBackgroundColor: "#ffffff",
+      // IMPORTANT: avoid "image in image" turquoise disc
+      botAvatarBackgroundColor: "transparent",
       botAvatarImage: evaIconUrl,
       botAvatarInitials: "",
 
-      userAvatarBackgroundColor: "#ffffff",
-      userAvatarImage: userAvatarGoldUrl,
+      userAvatarBackgroundColor: "transparent",
+      userAvatarImage: userAvatarUrl,
       userAvatarInitials: "",
 
       bubbleBackground: "#f5f6f8",
@@ -352,9 +366,9 @@
       bubbleFromUserBorderStyle: "solid",
       bubbleFromUserBorderWidth: 1,
 
-      suggestedActionBackgroundColor: "#d19900",
-      suggestedActionBackgroundColorOnHover: "#bc8900",
-      suggestedActionTextColor: "#242424",
+      suggestedActionBackgroundColor: "#26374a",
+      suggestedActionBackgroundColorOnHover: "#1f2f3d",
+      suggestedActionTextColor: "#ffffff",
       suggestedActionBorderRadius: 10,
       suggestedActionLayout: "flow",
 
@@ -367,14 +381,11 @@
     // ------------------------------------------------------------
     let directLineUrl = null;
     let isInitialized = false;
-    const STORAGE_KEY_OPEN = "eva_chat_open_v1";
 
     function showChat() {
       document.getElementById("chatbot-popup").classList.add("visible");
       document.getElementById("open-chat").classList.add("hidden");
-      sessionStorage.setItem(STORAGE_KEY_OPEN, "1");
 
-      // Lazy init on first open
       if (!isInitialized) {
         initializeChat().catch(() => {/* surfaced in widget */});
       }
@@ -383,7 +394,6 @@
     function hideChat() {
       document.getElementById("chatbot-popup").classList.remove("visible");
       document.getElementById("open-chat").classList.remove("hidden");
-      sessionStorage.setItem(STORAGE_KEY_OPEN, "0");
     }
 
     function escapeHtml(str) {
@@ -407,14 +417,13 @@
     }
 
     // ------------------------------------------------------------
-    // BOT/WEBCHAT LOGIC (your working pattern, cleaned up)
+    // BOT/WEBCHAT LOGIC
     // ------------------------------------------------------------
     function createCustomStore() {
       return window.WebChat.createStore(
         {},
         ({ dispatch }) => (next) => (action) => {
           if (action.type === "DIRECT_LINE/CONNECT_FULFILLED") {
-            // Start event + language lock for EN
             dispatch({
               type: "DIRECT_LINE/POST_ACTIVITY",
               meta: { method: "keyboard" },
@@ -424,7 +433,10 @@
                   name: "startConversation",
                   channelData: {
                     postBack: true,
-                    language: "en"
+
+                    // Pass both raw + mapped values so your topic can choose:
+                    Language: languageRaw,        // "English" or "French_Canada"
+                    locale: languageLocale        // "en" or "fr-CA"
                   }
                 }
               }
@@ -523,15 +535,9 @@
     // BOOTSTRAP
     // ------------------------------------------------------------
     window.addEventListener("DOMContentLoaded", () => {
-      // Icons
       document.getElementById("evaIcon").src = evaIconUrl;
       document.getElementById("evaLauncherIcon").src = evaIconUrl;
 
-      // Restore open/closed state for this tab session
-      const wasOpen = sessionStorage.getItem(STORAGE_KEY_OPEN) === "1";
-      if (wasOpen) showChat();
-
-      // ESC closes when open
       document.addEventListener("keydown", (e) => {
         if (e.key === "Escape") {
           const visible = document.getElementById("chatbot-popup").classList.contains("visible");
@@ -552,22 +558,16 @@
           <p class="dept">Trade Commissioner Service</p>
         </div>
       </div>
-      <div class="lang" title="French prototype is a separate page in /fr/">Français</div>
+      <div class="lang" title="French prototype is typically a separate page in /fr/">Français</div>
     </div>
   </div>
 
   <div class="container">
     <h1>Trade Commissioner Service</h1>
     <p class="lede">
-      Prototype page for testing the “Webchat Playground” embed approach with Eva.
+      Prototype page for testing the Copilot Studio WebChat embed approach with Eva.
       Use the chat button in the bottom-right to open the widget.
     </p>
-
-    <div class="note">
-      For testing without committing secrets: open this page with
-      <code>?tokenEndpoint=...</code> appended (URL-encoded).
-      If you hard-code the endpoint, replace <code>{{TOKEN_ENDPOINT_URL}}</code> in the file.
-    </div>
   </div>
 
   <div class="chat-shell" aria-live="polite">
