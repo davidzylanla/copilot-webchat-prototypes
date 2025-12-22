@@ -3,48 +3,147 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Chat with Eva – Prototype (EN)</title>
+  <title>Trade Commissioner Service – Chat Prototype (EN)</title>
+
+  <!-- Gov of Canada-ish typography: headings in Lato, body in Noto Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Noto+Sans:wght@400;600;700&display=swap" rel="stylesheet">
 
   <!-- Bot Framework Web Chat -->
   <script src="https://cdn.botframework.com/botframework-webchat/latest/webchat.js"></script>
 
   <style>
     :root{
-      --chat-width: 420px;
-      --chat-height: 560px;
-      --header-height: 52px;
-      --radius: 14px;
-      --shadow: 0 18px 40px rgba(0,0,0,.18);
+      /* GC/TCS-inspired palette */
+      --goc-navy: #26374a;
+      --goc-red:  #c00;
+      --eva-gold: #d19900;
+
+      /* Layout */
+      --page-max: 1140px;
       --gap: 18px;
 
-      --brand: #0b3a44;     /* header bar */
-      --brand-2: #0b6a7a;   /* launcher */
-      --text-on-brand: #ffffff;
+      /* Widget */
+      --chat-width: 420px;
+      --chat-height: 560px;
+      --header-height: 54px;
+      --radius: 14px;
+      --shadow: 0 18px 40px rgba(0,0,0,.18);
+
+      --text: #111;
+      --muted: #4b5563;
+      --border: #e5e7eb;
+      --bg: #ffffff;
     }
 
     html, body { height: 100%; }
     body{
-      margin:0;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      background:#fff;
-      color:#111;
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Noto Sans", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
     }
 
-    header{
-      padding: 26px 28px 12px;
-      border-bottom: 1px solid #eee;
+    /* Minimal GoC-style masthead */
+    .masthead{
+      border-bottom: 1px solid var(--border);
+      background: #fff;
     }
-    header h1{
-      margin:0;
-      font-size: 22px;
-      font-weight: 650;
+    .masthead__inner{
+      max-width: var(--page-max);
+      margin: 0 auto;
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
     }
-    main{
-      padding: 22px 28px;
-      color:#444;
-      max-width: 960px;
+    .brand{
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      min-width: 0;
+    }
+    .flag{
+      width: 42px;
+      height: 22px;
+      background:
+        linear-gradient(90deg, var(--goc-red) 0 22%, #fff 22% 78%, var(--goc-red) 78% 100%);
+      border: 1px solid rgba(0,0,0,.08);
+      border-radius: 2px;
+      flex: 0 0 auto;
+    }
+    .brand__text{
+      line-height: 1.15;
+      min-width: 0;
+    }
+    .brand__text .gov{
+      font-family: "Lato", "Noto Sans", system-ui, sans-serif;
+      font-weight: 700;
+      font-size: 15px;
+      margin: 0;
+    }
+    .brand__text .dept{
+      font-size: 13px;
+      color: #374151;
+      margin: 2px 0 0 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 520px;
+    }
+    .lang{
+      font-size: 13px;
+      color: var(--goc-navy);
+      text-decoration: underline;
+      cursor: pointer;
+      user-select: none;
+      white-space: nowrap;
     }
 
+    /* Page content */
+    .container{
+      max-width: var(--page-max);
+      margin: 0 auto;
+      padding: 22px 18px 90px;
+    }
+    h1{
+      font-family: "Lato", "Noto Sans", system-ui, sans-serif;
+      font-weight: 700;
+      font-size: 28px;
+      margin: 0 0 8px 0;
+      color: var(--goc-navy);
+    }
+    .lede{
+      margin: 0;
+      color: var(--muted);
+      max-width: 72ch;
+      line-height: 1.6;
+      font-size: 15px;
+    }
+    .note{
+      margin-top: 14px;
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--goc-navy);
+      background: #f9fafb;
+      border-radius: 10px;
+      max-width: 84ch;
+      color: #1f2937;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .note code{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size: 12px;
+      background: #fff;
+      padding: 1px 6px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+    }
+
+    /* Floating widget */
     .chat-shell{
       position: fixed;
       right: var(--gap);
@@ -67,8 +166,8 @@
 
     #chatbot-header{
       height: var(--header-height);
-      background: var(--brand);
-      color: var(--text-on-brand);
+      background: var(--goc-navy);
+      color: #fff;
       display:flex;
       align-items:center;
       justify-content:space-between;
@@ -80,14 +179,16 @@
       align-items:center;
       gap:10px;
       font-size: 14px;
-      font-weight: 650;
+      font-weight: 700;
       letter-spacing: .1px;
+      font-family: "Noto Sans", system-ui, sans-serif;
     }
     .header-title img{
       width: 22px;
       height: 22px;
       border-radius: 6px;
       display:block;
+      background: transparent;
     }
 
     .header-buttons{
@@ -99,7 +200,7 @@
       appearance:none;
       border:0;
       background:transparent;
-      color: var(--text-on-brand);
+      color: #fff;
       cursor:pointer;
       width: 36px;
       height: 36px;
@@ -107,57 +208,68 @@
       display:flex;
       align-items:center;
       justify-content:center;
+      font-size: 18px;
+      line-height: 1;
     }
     .icon-button:hover{ background: rgba(255,255,255,.12); }
     .icon-button:focus{ outline: 3px solid rgba(255,255,255,.35); outline-offset: 2px; }
 
-    /* Small PII banner */
     .pii-banner{
       font-size: 12px;
       line-height: 1.35;
       padding: 8px 12px;
-      border-bottom: 1px solid #eee;
+      border-bottom: 1px solid var(--border);
       background: #fafafa;
-      color: #333;
+      color: #1f2937;
     }
 
-    #webchat{
-      height: calc(100% - var(--header-height) - 44px); /* header + pii banner */
-      background: #fff;
-    }
-
-    /* Simple error panel in-widget */
     #chat-error{
       display:none;
-      padding: 12px;
+      padding: 10px 12px;
       font-size: 13px;
       color: #111;
       background: #fff3f3;
       border-bottom: 1px solid #ffd0d0;
     }
     #chat-error code{
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
       font-size: 12px;
     }
 
+    #webchat{
+      height: calc(100% - var(--header-height) - 44px);
+      background: #fff;
+    }
+
+    /* Launcher: round, navy + gold ring */
     #open-chat{
       width: 64px;
       height: 64px;
       border-radius: 999px;
       border: none;
       cursor: pointer;
-      background: var(--brand-2);
+      background: var(--goc-navy);
       box-shadow: var(--shadow);
       display:flex;
       align-items:center;
       justify-content:center;
       padding: 0;
+      position: relative;
+    }
+    #open-chat::before{
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: 999px;
+      border: 2px solid rgba(209,153,0,.9); /* gold ring */
+      pointer-events: none;
     }
     #open-chat.hidden{ display:none; }
     #open-chat img{
       width: 30px;
       height: 30px;
       display:block;
+      filter: drop-shadow(0 1px 0 rgba(0,0,0,.25));
     }
 
     @media (max-width: 768px){
@@ -180,58 +292,83 @@
 
   <script>
     // ------------------------------------------------------------
-    // CONFIG
+    // REQUIRED: token endpoint (placeholder + optional query override)
     // ------------------------------------------------------------
+    const TOKEN_ENDPOINT_PLACEHOLDER = "https://bd8b80b56a19e41ba78d4fa1f1c4cd.f3.environment.api.powerplatform.com/powervirtualagents/botsbyschema/crd8f_gacAgentUc02/directline/token?api-version=2022-03-01-preview";
+
+    function resolveTokenEndpoint() {
+      const params = new URLSearchParams(window.location.search);
+      const te = params.get("tokenEndpoint");
+      return (te && te.trim()) ? te.trim() : TOKEN_ENDPOINT_PLACEHOLDER;
+    }
+
+    // Assets
     const evaIconUrl =
       "https://tcs-akamai-stage.tradecommissioner.gc.ca/etc.clientlibs/tcs/clientlibs/clientlib-site/resources/assets/chatbot/chatbot.png";
 
-    // Prefer passing tokenEndpoint via querystring to avoid committing it:
-    //   ?tokenEndpoint=https%3A%2F%2F...%2Fdirectline%2Ftoken%3Fapi-version%3D...
-    // Fallback placeholder for local testing.
-    const TOKEN_ENDPOINT_PLACEHOLDER = "https://bd8b80b56a19e41ba78d4fa1f1c4cd.f3.environment.api.powerplatform.com/powervirtualagents/botsbyschema/crd8f_gacAgentUc02/directline/token?api-version=2022-03-01-preview";
+    const userAvatarGoldUrl =
+      "https://powercatexternal.blob.core.windows.net/creatorkit/defaultuser.png";
 
-    function getTokenEndpointFromQuery() {
-      const params = new URLSearchParams(window.location.search);
-      const te = params.get("tokenEndpoint");
-      return te && te.trim() ? te.trim() : null;
-    }
-
-    function resolveTokenEndpoint() {
-      const fromQuery = getTokenEndpointFromQuery();
-      if (fromQuery) return fromQuery;
-      return TOKEN_ENDPOINT_PLACEHOLDER;
-    }
-
-    // WebChat styling (keep it minimal; you can expand later)
+    // ------------------------------------------------------------
+    // Web Chat style options (navy + gold accents, GoC-ish typography)
+    // ------------------------------------------------------------
     const styleOptions = {
-      accent: "#0078D4",
+      primaryFont: '"Noto Sans", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif',
+      monospaceFont: 'Consolas, ui-monospace, SFMono-Regular, Menlo, Monaco, "Liberation Mono", monospace',
+
+      accent: "#d19900",
+
       backgroundColor: "#ffffff",
-      botAvatarImage: evaIconUrl,
-      botAvatarInitials: "E",
-      userAvatarInitials: "U",
-      bubbleBackground: "#f5f6f8",
-      bubbleFromUserBackground: "#ebefff",
-      bubbleTextColor: "#242424",
-      bubbleFromUserTextColor: "#242424",
-      suggestedActionBackgroundColor: "#0b6a7a",
-      suggestedActionTextColor: "#ffffff",
       sendBoxBackground: "#ffffff",
-      sendBoxTextColor: "#2e2d2d",
-      sendBoxButtonColor: "#0b6a7a",
+      sendBoxTextColor: "#111111",
       sendBoxBorderTop: "solid 1px #e5e7eb",
-      hideUploadButton: false
+      sendBoxPlaceholderColor: "#6b7280",
+      sendBoxButtonColor: "#d19900",
+      sendBoxButtonColorOnHover: "#bc8900",
+      sendBoxHeight: 60,
+
+      avatarBorderRadius: "50%",
+      avatarSize: 39,
+
+      botAvatarBackgroundColor: "#ffffff",
+      botAvatarImage: evaIconUrl,
+      botAvatarInitials: "",
+
+      userAvatarBackgroundColor: "#ffffff",
+      userAvatarImage: userAvatarGoldUrl,
+      userAvatarInitials: "",
+
+      bubbleBackground: "#f5f6f8",
+      bubbleTextColor: "#111111",
+      bubbleBorderRadius: 10,
+      bubbleBorderColor: "#e5e7eb",
+      bubbleBorderStyle: "solid",
+      bubbleBorderWidth: 1,
+
+      bubbleFromUserBackground: "#ebefff",
+      bubbleFromUserTextColor: "#111111",
+      bubbleFromUserBorderRadius: 10,
+      bubbleFromUserBorderColor: "#d1d5db",
+      bubbleFromUserBorderStyle: "solid",
+      bubbleFromUserBorderWidth: 1,
+
+      suggestedActionBackgroundColor: "#d19900",
+      suggestedActionBackgroundColorOnHover: "#bc8900",
+      suggestedActionTextColor: "#242424",
+      suggestedActionBorderRadius: 10,
+      suggestedActionLayout: "flow",
+
+      hideUploadButton: false,
+      messageActivityWordBreak: "break-word"
     };
 
     // ------------------------------------------------------------
-    // STATE
+    // STATE / UX
     // ------------------------------------------------------------
     let directLineUrl = null;
     let isInitialized = false;
     const STORAGE_KEY_OPEN = "eva_chat_open_v1";
 
-    // ------------------------------------------------------------
-    // UI HELPERS
-    // ------------------------------------------------------------
     function showChat() {
       document.getElementById("chatbot-popup").classList.add("visible");
       document.getElementById("open-chat").classList.add("hidden");
@@ -239,7 +376,7 @@
 
       // Lazy init on first open
       if (!isInitialized) {
-        initializeChat().catch(() => {/* errors surfaced in widget */});
+        initializeChat().catch(() => {/* surfaced in widget */});
       }
     }
 
@@ -247,6 +384,12 @@
       document.getElementById("chatbot-popup").classList.remove("visible");
       document.getElementById("open-chat").classList.remove("hidden");
       sessionStorage.setItem(STORAGE_KEY_OPEN, "0");
+    }
+
+    function escapeHtml(str) {
+      return String(str).replace(/[&<>"']/g, s => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
+      }[s]));
     }
 
     function setError(message, details) {
@@ -263,21 +406,15 @@
       el.innerHTML = "";
     }
 
-    function escapeHtml(str) {
-      return String(str).replace(/[&<>"']/g, s => ({
-        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
-      }[s]));
-    }
-
     // ------------------------------------------------------------
-    // BOT/WEBCHAT LOGIC
+    // BOT/WEBCHAT LOGIC (your working pattern, cleaned up)
     // ------------------------------------------------------------
     function createCustomStore() {
       return window.WebChat.createStore(
         {},
         ({ dispatch }) => (next) => (action) => {
           if (action.type === "DIRECT_LINE/CONNECT_FULFILLED") {
-            // Language lock + start event
+            // Start event + language lock for EN
             dispatch({
               type: "DIRECT_LINE/POST_ACTIVITY",
               meta: { method: "keyboard" },
@@ -287,7 +424,7 @@
                   name: "startConversation",
                   channelData: {
                     postBack: true,
-                    language: "en"   // <— language lock for this EN page
+                    language: "en"
                   }
                 }
               }
@@ -386,15 +523,13 @@
     // BOOTSTRAP
     // ------------------------------------------------------------
     window.addEventListener("DOMContentLoaded", () => {
-      // Set icons
+      // Icons
       document.getElementById("evaIcon").src = evaIconUrl;
       document.getElementById("evaLauncherIcon").src = evaIconUrl;
 
       // Restore open/closed state for this tab session
       const wasOpen = sessionStorage.getItem(STORAGE_KEY_OPEN) === "1";
-      if (wasOpen) {
-        showChat();
-      }
+      if (wasOpen) showChat();
 
       // ESC closes when open
       document.addEventListener("keydown", (e) => {
@@ -408,13 +543,32 @@
 </head>
 
 <body>
-  <header>
-    <h1>Trade Commissioner Service</h1>
-  </header>
+  <div class="masthead">
+    <div class="masthead__inner">
+      <div class="brand">
+        <div class="flag" aria-hidden="true"></div>
+        <div class="brand__text">
+          <p class="gov">Government of Canada</p>
+          <p class="dept">Trade Commissioner Service</p>
+        </div>
+      </div>
+      <div class="lang" title="French prototype is a separate page in /fr/">Français</div>
+    </div>
+  </div>
 
-  <main>
-    <p>English prototype page. Use the chat launcher in the bottom-right.</p>
-  </main>
+  <div class="container">
+    <h1>Trade Commissioner Service</h1>
+    <p class="lede">
+      Prototype page for testing the “Webchat Playground” embed approach with Eva.
+      Use the chat button in the bottom-right to open the widget.
+    </p>
+
+    <div class="note">
+      For testing without committing secrets: open this page with
+      <code>?tokenEndpoint=...</code> appended (URL-encoded).
+      If you hard-code the endpoint, replace <code>{{TOKEN_ENDPOINT_URL}}</code> in the file.
+    </div>
+  </div>
 
   <div class="chat-shell" aria-live="polite">
     <div id="chatbot-popup" role="dialog" aria-label="Chat with Eva">
