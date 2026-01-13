@@ -1,1 +1,599 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Trade Commissioner Service – Chat Prototype (EN)</title>
 
+  <!-- ============================================================
+       CONFIG: TOKEN ENDPOINT (easy to find)
+       Option A (recommended for testing):
+         Pass it as a query string:
+           ?tokenEndpoint=https%3A%2F%2F...%2Fdirectline%2Ftoken%3Fapi-version%3D...
+       Option B:
+         Replace the placeholder below.
+       ============================================================ -->
+  <script>
+    const TOKEN_ENDPOINT_PLACEHOLDER = "https://bd8b80b56a19e41ba78d4fa1f1c4cd.f3.environment.api.powerplatform.com/powervirtualagents/botsbyschema/crd8f_gacAgentUc02/directline/token?api-version=2022-03-01-preview";
+  </script>
+
+  <!-- Gov of Canada-ish typography: headings in Lato, body in Noto Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Noto+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <!-- Bot Framework Web Chat -->
+  <script src="https://cdn.botframework.com/botframework-webchat/latest/webchat.js"></script>
+
+  <style>
+    :root{
+      /* TCS/GCWeb-style navy (avoid gold accents) */
+      --tcs-navy: #26374a;
+      --tcs-navy-2: #1f2f3d; /* hover/darker */
+      --text-on-navy: #ffffff;
+
+      /* Neutrals */
+      --text: #111;
+      --muted: #4b5563;
+      --border: #e5e7eb;
+      --bg: #ffffff;
+
+      /* Layout */
+      --page-max: 1140px;
+      --gap: 18px;
+
+      /* Widget */
+      --chat-width: 420px;
+      --chat-height: 560px;
+      --header-height: 54px;
+      --radius: 14px;
+      --shadow: 0 18px 40px rgba(0,0,0,.18);
+    }
+
+    html, body { height: 100%; }
+    body{
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Noto Sans", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    }
+
+    /* Minimal GoC-style masthead */
+    .masthead{
+      border-bottom: 1px solid var(--border);
+      background: #fff;
+    }
+    .masthead__inner{
+      max-width: var(--page-max);
+      margin: 0 auto;
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .brand{
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      min-width: 0;
+    }
+    .flag{
+      width: 42px;
+      height: 22px;
+      background:
+        linear-gradient(90deg, #c00 0 22%, #fff 22% 78%, #c00 78% 100%);
+      border: 1px solid rgba(0,0,0,.08);
+      border-radius: 2px;
+      flex: 0 0 auto;
+    }
+    .brand__text{
+      line-height: 1.15;
+      min-width: 0;
+    }
+    .brand__text .gov{
+      font-family: "Lato", "Noto Sans", system-ui, sans-serif;
+      font-weight: 700;
+      font-size: 15px;
+      margin: 0;
+    }
+    .brand__text .dept{
+      font-size: 13px;
+      color: #374151;
+      margin: 2px 0 0 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 520px;
+    }
+    .lang{
+      font-size: 13px;
+      color: var(--tcs-navy);
+      text-decoration: underline;
+      cursor: pointer;
+      user-select: none;
+      white-space: nowrap;
+    }
+
+    /* Page content */
+    .container{
+      max-width: var(--page-max);
+      margin: 0 auto;
+      padding: 22px 18px 90px;
+    }
+    h1{
+      font-family: "Lato", "Noto Sans", system-ui, sans-serif;
+      font-weight: 700;
+      font-size: 28px;
+      margin: 0 0 8px 0;
+      color: var(--tcs-navy);
+    }
+    .lede{
+      margin: 0;
+      color: var(--muted);
+      max-width: 72ch;
+      line-height: 1.6;
+      font-size: 15px;
+    }
+
+    /* Floating widget */
+    .chat-shell{
+      position: fixed;
+      right: var(--gap);
+      bottom: calc(var(--gap) + env(safe-area-inset-bottom));
+      z-index: 9999;
+    }
+
+    #chatbot-popup{
+      width: var(--chat-width);
+      height: var(--chat-height);
+      background: #fff;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      border: 1px solid rgba(0,0,0,.10);
+      display: none;
+      margin-bottom: 12px;
+    }
+    #chatbot-popup.visible{ display:block; }
+
+    #chatbot-header{
+      height: var(--header-height);
+      background: var(--tcs-navy);
+      color: var(--text-on-navy);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding: 0 10px 0 14px;
+      border-bottom: 1px solid rgba(255,255,255,.12);
+    }
+    .header-title{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: .1px;
+      font-family: "Noto Sans", system-ui, sans-serif;
+    }
+
+    /* IMPORTANT: no "image in image" effect */
+    .header-title img{
+      width: 22px;
+      height: 22px;
+      border-radius: 6px;
+      display:block;
+      background: transparent; /* do not add a filled circle */
+    }
+
+    .header-buttons{
+      display:flex;
+      gap:6px;
+      align-items:center;
+    }
+    .icon-button{
+      appearance:none;
+      border:0;
+      background:transparent;
+      color: #fff;
+      cursor:pointer;
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size: 18px;
+      line-height: 1;
+    }
+    .icon-button:hover{ background: rgba(255,255,255,.12); }
+    .icon-button:focus{ outline: 3px solid rgba(255,255,255,.35); outline-offset: 2px; }
+
+    .pii-banner{
+      font-size: 12px;
+      line-height: 1.35;
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border);
+      background: #fafafa;
+      color: #1f2937;
+    }
+
+    #chat-error{
+      display:none;
+      padding: 10px 12px;
+      font-size: 13px;
+      color: #111;
+      background: #fff3f3;
+      border-bottom: 1px solid #ffd0d0;
+    }
+    #chat-error code{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size: 12px;
+    }
+
+    #webchat{
+      height: calc(100% - var(--header-height) - 44px);
+      background: #fff;
+    }
+
+    /* Launcher: single circle, navy, no gold ring */
+    #open-chat{
+      width: 64px;
+      height: 64px;
+      border-radius: 999px;
+      border: none;
+      cursor: pointer;
+      background: var(--tcs-navy);
+      box-shadow: var(--shadow);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding: 0;
+    }
+    #open-chat:hover{ background: var(--tcs-navy-2); }
+    #open-chat.hidden{ display:none; }
+    #open-chat img{
+      width: 30px;
+      height: 30px;
+      display:block;
+    }
+
+    @media (max-width: 768px){
+      #chatbot-popup{
+        width: calc(100vw - (var(--gap) * 2));
+        height: 75vh;
+      }
+    }
+    @media (max-width: 520px){
+      .chat-shell{
+        right: 10px;
+        bottom: calc(10px + env(safe-area-inset-bottom));
+      }
+      #chatbot-popup{
+        width: calc(100vw - 20px);
+        height: 80vh;
+      }
+    }
+  </style>
+
+  <script>
+    // ------------------------------------------------------------
+    // Assets
+    // ------------------------------------------------------------
+    const evaIconUrl =
+      "https://tcs-akamai-stage.tradecommissioner.gc.ca/etc.clientlibs/tcs/clientlibs/clientlib-site/resources/assets/chatbot/chatbot.png";
+
+    // Keep the user avatar you liked (gold sample)
+    const userAvatarUrl =
+      "https://powercatexternal.blob.core.windows.net/creatorkit/defaultuser.png";
+
+    // ------------------------------------------------------------
+    // Token endpoint resolver (querystring override)
+    // ------------------------------------------------------------
+    function resolveTokenEndpoint() {
+      const params = new URLSearchParams(window.location.search);
+      const te = params.get("tokenEndpoint");
+      return (te && te.trim()) ? te.trim() : TOKEN_ENDPOINT_PLACEHOLDER;
+    }
+
+    // ------------------------------------------------------------
+    // Language passing strategy
+    // Your site uses:
+    //   Language=English
+    //   Language=French_Canada
+    //
+    // We will:
+    // 1) Read that from querystring (case-sensitive key: Language)
+    // 2) Map it to a WebChat-friendly locale
+    // 3) Send it via startConversation event channelData
+    // ------------------------------------------------------------
+    function getLanguageRaw() {
+      const params = new URLSearchParams(window.location.search);
+      return params.get("Language") || ""; // "English" or "French_Canada"
+    }
+
+    function mapLanguageToLocale(raw) {
+      if (raw === "French_Canada") return "fr-CA";
+      if (raw === "English") return "en";
+      return "en"; // default
+    }
+
+    const languageRaw = getLanguageRaw();
+    const languageLocale = mapLanguageToLocale(languageRaw);
+
+    // ------------------------------------------------------------
+    // Web Chat style options (no gold theme)
+    // ------------------------------------------------------------
+    const styleOptions = {
+      primaryFont: '"Noto Sans", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif',
+      monospaceFont: 'Consolas, ui-monospace, SFMono-Regular, Menlo, Monaco, "Liberation Mono", monospace',
+
+      // Keep accents aligned to TCS navy
+      accent: "#26374a",
+
+      backgroundColor: "#ffffff",
+      sendBoxBackground: "#ffffff",
+      sendBoxTextColor: "#111111",
+      sendBoxBorderTop: "solid 1px #e5e7eb",
+      sendBoxPlaceholderColor: "#6b7280",
+      sendBoxButtonColor: "#26374a",
+      sendBoxButtonColorOnHover: "#1f2f3d",
+      sendBoxHeight: 60,
+
+      avatarBorderRadius: "50%",
+      avatarSize: 39,
+
+      // IMPORTANT: avoid "image in image" turquoise disc
+      botAvatarBackgroundColor: "transparent",
+      botAvatarImage: evaIconUrl,
+      botAvatarInitials: "",
+
+      userAvatarBackgroundColor: "transparent",
+      userAvatarImage: userAvatarUrl,
+      userAvatarInitials: "",
+
+      bubbleBackground: "#f5f6f8",
+      bubbleTextColor: "#111111",
+      bubbleBorderRadius: 10,
+      bubbleBorderColor: "#e5e7eb",
+      bubbleBorderStyle: "solid",
+      bubbleBorderWidth: 1,
+
+      bubbleFromUserBackground: "#ebefff",
+      bubbleFromUserTextColor: "#111111",
+      bubbleFromUserBorderRadius: 10,
+      bubbleFromUserBorderColor: "#d1d5db",
+      bubbleFromUserBorderStyle: "solid",
+      bubbleFromUserBorderWidth: 1,
+
+      suggestedActionBackgroundColor: "#26374a",
+      suggestedActionBackgroundColorOnHover: "#1f2f3d",
+      suggestedActionTextColor: "#ffffff",
+      suggestedActionBorderRadius: 10,
+      suggestedActionLayout: "flow",
+
+      hideUploadButton: false,
+      messageActivityWordBreak: "break-word"
+    };
+
+    // ------------------------------------------------------------
+    // STATE / UX
+    // ------------------------------------------------------------
+    let directLineUrl = null;
+    let isInitialized = false;
+
+    function showChat() {
+      document.getElementById("chatbot-popup").classList.add("visible");
+      document.getElementById("open-chat").classList.add("hidden");
+
+      if (!isInitialized) {
+        initializeChat().catch(() => {/* surfaced in widget */});
+      }
+    }
+
+    function hideChat() {
+      document.getElementById("chatbot-popup").classList.remove("visible");
+      document.getElementById("open-chat").classList.remove("hidden");
+    }
+
+    function escapeHtml(str) {
+      return String(str).replace(/[&<>"']/g, s => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
+      }[s]));
+    }
+
+    function setError(message, details) {
+      const el = document.getElementById("chat-error");
+      el.style.display = "block";
+      el.innerHTML =
+        `<strong>Chat could not start.</strong><div style="margin-top:6px">${escapeHtml(message)}</div>` +
+        (details ? `<div style="margin-top:8px"><code>${escapeHtml(details)}</code></div>` : "");
+    }
+
+    function clearError() {
+      const el = document.getElementById("chat-error");
+      el.style.display = "none";
+      el.innerHTML = "";
+    }
+
+    // ------------------------------------------------------------
+    // BOT/WEBCHAT LOGIC
+    // ------------------------------------------------------------
+    function createCustomStore() {
+      return window.WebChat.createStore(
+        {},
+        ({ dispatch }) => (next) => (action) => {
+          if (action.type === "DIRECT_LINE/CONNECT_FULFILLED") {
+            dispatch({
+              type: "DIRECT_LINE/POST_ACTIVITY",
+              meta: { method: "keyboard" },
+              payload: {
+                activity: {
+                  type: "event",
+                  name: "startConversation",
+                  channelData: {
+                    postBack: true,
+
+                    // Pass both raw + mapped values so your topic can choose:
+                    Language: languageRaw,        // "English" or "French_Canada"
+                    locale: languageLocale        // "en" or "fr-CA"
+                  }
+                }
+              }
+            });
+          }
+          return next(action);
+        }
+      );
+    }
+
+    function getRegionalChannelSettingsURL(tokenEndpointUrl) {
+      const idx = tokenEndpointUrl.indexOf("/powervirtualagents");
+      if (idx < 0) throw new Error("tokenEndpoint must contain '/powervirtualagents'.");
+
+      const environmentEndPoint = tokenEndpointUrl.slice(0, idx);
+
+      const apiIndex = tokenEndpointUrl.indexOf("api-version");
+      if (apiIndex < 0) throw new Error("tokenEndpoint must include 'api-version=' querystring.");
+
+      const apiVersion = tokenEndpointUrl.slice(apiIndex).split("=")[1];
+
+      return `${environmentEndPoint}/powervirtualagents/regionalchannelsettings?api-version=${apiVersion}`;
+    }
+
+    async function getConversationToken(tokenEndpoint) {
+      const res = await fetch(tokenEndpoint, { cache: "no-store" });
+      const info = await res.json();
+      if (!info || !info.token) throw new Error("Token endpoint did not return a token.");
+      return info.token;
+    }
+
+    async function restartConversation() {
+      try {
+        clearError();
+        const tokenEndpoint = resolveTokenEndpoint();
+
+        if (!directLineUrl) throw new Error("DirectLine URL not initialized yet.");
+        if (!tokenEndpoint || tokenEndpoint.includes("{{TOKEN_ENDPOINT_URL}}")) {
+          throw new Error("tokenEndpoint is not set. Provide ?tokenEndpoint=... or replace the placeholder.");
+        }
+
+        const token = await getConversationToken(tokenEndpoint);
+
+        const newDirectLine = window.WebChat.createDirectLine({
+          domain: `${directLineUrl}v3/directline`,
+          token
+        });
+
+        window.WebChat.renderWebChat(
+          { directLine: newDirectLine, styleOptions, store: createCustomStore() },
+          document.getElementById("webchat")
+        );
+      } catch (e) {
+        console.error("Restart failed:", e);
+        setError("Please set a valid token endpoint, then try again.", e?.message || String(e));
+      }
+    }
+
+    async function initializeChat() {
+      try {
+        clearError();
+        const tokenEndpoint = resolveTokenEndpoint();
+
+        if (!tokenEndpoint || tokenEndpoint.includes("{{TOKEN_ENDPOINT_URL}}")) {
+          throw new Error("tokenEndpoint is not set. Provide ?tokenEndpoint=... or replace the placeholder.");
+        }
+
+        const regionalURL = getRegionalChannelSettingsURL(tokenEndpoint);
+
+        const settingsRes = await fetch(regionalURL, { cache: "no-store" });
+        const settings = await settingsRes.json();
+
+        directLineUrl = settings?.channelUrlsById?.directline;
+        if (!directLineUrl) throw new Error("Could not resolve Direct Line regional URL.");
+
+        const token = await getConversationToken(tokenEndpoint);
+
+        const directLine = window.WebChat.createDirectLine({
+          domain: `${directLineUrl}v3/directline`,
+          token
+        });
+
+        window.WebChat.renderWebChat(
+          { directLine, styleOptions, store: createCustomStore() },
+          document.getElementById("webchat")
+        );
+
+        isInitialized = true;
+      } catch (e) {
+        console.error("Initialize failed:", e);
+        setError("Chat initialization failed.", e?.message || String(e));
+      }
+    }
+
+    // ------------------------------------------------------------
+    // BOOTSTRAP
+    // ------------------------------------------------------------
+    window.addEventListener("DOMContentLoaded", () => {
+      document.getElementById("evaIcon").src = evaIconUrl;
+      document.getElementById("evaLauncherIcon").src = evaIconUrl;
+
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          const visible = document.getElementById("chatbot-popup").classList.contains("visible");
+          if (visible) hideChat();
+        }
+      });
+    });
+  </script>
+</head>
+
+<body>
+  <div class="masthead">
+    <div class="masthead__inner">
+      <div class="brand">
+        <div class="flag" aria-hidden="true"></div>
+        <div class="brand__text">
+          <p class="gov">Government of Canada</p>
+          <p class="dept">Trade Commissioner Service</p>
+        </div>
+      </div>
+      <div class="lang" title="French prototype is typically a separate page in /fr/">Français</div>
+    </div>
+  </div>
+
+  <div class="container">
+    <h1>Trade Commissioner Service</h1>
+    <p class="lede">
+      Prototype page for testing the Copilot Studio WebChat embed approach with Eva.
+      Use the chat button in the bottom-right to open the widget.
+    </p>
+  </div>
+
+  <div class="chat-shell" aria-live="polite">
+    <div id="chatbot-popup" role="dialog" aria-label="Clavarder avec Eva">
+      <div id="chatbot-header">
+        <div class="header-title">
+          <img id="evaIcon" alt="" />
+          <span>Clavarder avec Eva</span>
+        </div>
+        <div class="header-buttons">
+          <button class="icon-button" type="button" onclick="restartConversation()" aria-label="Restart conversation">↻</button>
+          <button class="icon-button" type="button" onclick="hideChat()" aria-label="Close chat">×</button>
+        </div>
+      </div>
+
+      <div class="pii-banner">
+        Please do not include personal, sensitive, or confidential information in this chat.
+      </div>
+
+      <div id="chat-error" role="status" aria-live="polite"></div>
+      <div id="webchat" role="main"></div>
+    </div>
+
+    <button id="open-chat" type="button" onclick="showChat()" aria-label="Open chat">
+      <img id="evaLauncherIcon" alt="" />
+    </button>
+  </div>
+</body>
+</html>
