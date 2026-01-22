@@ -486,7 +486,7 @@
         });
 
         window.WebChat.renderWebChat(
-          { directLine: newDirectLine, styleOptions, store: createCustomStore() },
+          { directLine, styleOptions, store: createCustomStore(), locale: "fr-CA" },
           document.getElementById("webchat")
         );
       } catch (e) {
@@ -520,7 +520,7 @@
         });
 
         window.WebChat.renderWebChat(
-          { directLine, styleOptions, store: createCustomStore() },
+          { directLine, styleOptions, store: createCustomStore(), locale: "fr-CA" },
           document.getElementById("webchat")
         );
 
@@ -584,7 +584,7 @@
       </div>
 
       <div class="pii-banner">
-        Please do not include personal, sensitive, or confidential information in this chat.
+        Veuillez ne pas inclure de renseignements personnels, sensibles ou confidentiels dans ce clavardage.
       </div>
 
       <div id="chat-error" role="status" aria-live="polite"></div>
