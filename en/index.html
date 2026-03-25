@@ -297,19 +297,16 @@
     }
 
     // ------------------------------------------------------------
-    // Language passing strategy
-    // Your site uses:
-    //   Language=English
-    //   Language=French_Canada
-    //
-    // We will:
-    // 1) Read that from querystring (case-sensitive key: Language)
-    // 2) Map it to a WebChat-friendly locale
-    // 3) Send it via startConversation event channelData
+    // Language/context passing strategy
+    // Microsoft’s current custom-canvas guidance is to:
+    // 1) Read the external value from the page/query string
+    // 2) Send it with a pvaSetContext event once Direct Line connects
+    // 3) Make sure Copilot Studio has a global variable named Language
+    //    with "External sources can set values" enabled
     // ------------------------------------------------------------
     function getLanguageRaw() {
       const params = new URLSearchParams(window.location.search);
-      return params.get("Language") || ""; // "English" or "French_Canada"
+      return params.get("Language") || "English"; // default for /en/ page
     }
 
     function mapLanguageToLocale(raw) {
@@ -424,21 +421,26 @@
         {},
         ({ dispatch }) => (next) => (action) => {
           if (action.type === "DIRECT_LINE/CONNECT_FULFILLED") {
+            // Pass Copilot Studio context variables using the documented
+            // pvaSetContext event for custom canvas / Web Chat.
             dispatch({
-              type: "DIRECT_LINE/POST_ACTIVITY",
-              meta: { method: "keyboard" },
+              type: "WEB_CHAT/SEND_EVENT",
               payload: {
-                activity: {
-                  type: "event",
-                  name: "startConversation",
-                  channelData: {
-                    postBack: true,
-
-                    // Pass both raw + mapped values so your topic can choose:
-                    Language: languageRaw,        // "English" or "French_Canada"
-                    locale: languageLocale        // "en" or "fr-CA"
-                  }
+                name: "pvaSetContext",
+                value: {
+                  Language: languageRaw,          // "English" or "French_Canada"
+                  locale: languageLocale,         // optional helper value
+                  currentURL: window.location.href
                 }
+              }
+            });
+
+            // Optional: trigger the greeting / Conversation Start flow immediately.
+            dispatch({
+              type: "WEB_CHAT/SEND_EVENT",
+              payload: {
+                name: "startConversation",
+                value: {}
               }
             });
           }
